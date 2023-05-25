@@ -1,74 +1,71 @@
 from flask import Flask,request,jsonify,render_template,send_file
 # from camera import VideoCamera
-import cv2
-#import moviepy editor 
+import pandas as pd
 from moviepy.editor import *
 
-# import StemmerFactory class
-from Sastrawi.Stemmer.StemmerFactory import StemmerFactory  
 
 app = Flask(__name__)
 # video_stream = VideoCamera()
 
+df = pd.read_csv('data/kataImbuhan_kataDasar.csv')
+imbuhan = ['ter', 'te', 'se', 'per', 'peng', 
+               'pen', 'pem', 'pe', 'men', 'mem', 
+               'me', 'ke', 'di', 'ber', 'be']
 list_animation = ["me","masak","apa","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 
 def animation(word):
-    video = []
-    word_list = word.split()
-    
-    #load file
-    for i in word:
-        if (i in list_animation):
-            i.upper()
-            video.append(VideoFileClip(fr'video\{i}.mp4'))
-        elif(i == " "):
-            video.append(VideoFileClip(fr'video\idle.mp4'))
+    video = [ VideoFileClip(fr'video\{i}.mp4') for i in word]
     # # join and write 
     result = concatenate_videoclips(video)
     result.write_videofile('combined.mp4',20)
 
-def hasil(word):
-    # stemmer
-    factory = StemmerFactory()
-    stemmer = factory.create_stemmer()
 
-    # stemming process
-    sentence = word
-    output   = stemmer.stem(sentence)
-    sentence =list(sentence.lower().split())
-    output = list(output.lower().split())
-    print(f"{sentence}  {len(sentence)}")
-    print(f"{output}  {len(output)}")
+def textToAnimation(word_sequence):
+    # print(word_sequence)
+    wordToAnimation = []
+    for i in word_sequence:
+        if i in list_animation:
+            wordToAnimation.append(i)
+            wordToAnimation.append('idle')
+        elif i not in list_animation :
+            for j in i :
+                if j in list_animation:
+                    wordToAnimation.append(j)
+                elif j not in list_animation:
+                    error = 'data tidak ditemukan'
+                    return error
+            wordToAnimation.append('idle')
+    # print(wordToAnimation)
+    return wordToAnimation
 
-    hasil = []
-    imbuhan = ['ter', 'te', 'se', 'per', 'peng', 
-               'pen', 'pem', 'pe', 'men', 'mem', 
-               'me', 'ke', 'di', 'ber', 'be']
-
-    # print(imbuhan)
-    for i in range(len(sentence)):
-        word = sentence[i]
-        if (output[i]!= word):
+def trimKataImbuhan(word):
+    li = list(word.split(" "))
+    # print(li)
+    word_sequence = []
+    for i in li :
+        # print(i)
+        if i in df['kata_imbuhan'].unique():
+            index = df[df['kata_imbuhan']==i].index.to_numpy()
             for j in imbuhan:
-                if word.startswith(j):
-                    c = word[:len(j)]
-                    # print(c)
-                    hasil.append(j)
-                    hasil.append(output[i])
-                    break
+                if i.startswith(j):
+                    word_sequence.append(j)
+                    word_sequence.append(df['kata_dasar'][index[0]].strip())
+                break
         else:
-            hasil.append(output[i])
-    
-    print(hasil)
-    return hasil
+            word_sequence.append(i)
+    # print(word_sequence)
+    return(word_sequence)
+    # textToAnimation(word_sequence)
+   
+
 
 
 @app.route('/animasi',methods= ['GET'])
 def animasi():
-    word = request.form['word']
-    seperate = hasil(word)
-    result =' '.join(map(str, seperate))
-    animation(result)
+    word = request.form['word'] 
+    trim = trimKataImbuhan(word)
+    textanimasi = textToAnimation(trim)
+    animation(textanimasi)    
     return send_file('combined.mp4')
 
 @app.route('/')
@@ -76,4 +73,4 @@ def index():
     return 'hello world '
 
 if __name__ == '__main__':
-    app.run(debug=False,host = '0.0.0.0') 
+    app.run(debug=True) 
