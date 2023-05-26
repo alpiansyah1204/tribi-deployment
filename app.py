@@ -57,15 +57,12 @@ def trimKataImbuhan(word):
     return(word_sequence)
     # textToAnimation(word_sequence)
    
-
-
-
 @app.route('/animasi',methods= ['GET'])
 def animasi():
-    word = request.form['word'] 
-    trim = trimKataImbuhan(word)
-    textanimasi = textToAnimation(trim)
-    animation(textanimasi)    
+    # word = request.form['word'] 
+    # trim = trimKataImbuhan(word)
+    # textanimasi = textToAnimation(trim)
+    # animation(textanimasi)    
     return send_file('combined.mp4')
 
 @app.route('/')
