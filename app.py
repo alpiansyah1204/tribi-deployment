@@ -1,17 +1,22 @@
 from flask import Flask,request,send_file
 # from camera import VideoCamera
-import pandas as pd
+
 from moviepy.editor import *
+# import StemmerFactory class
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
-
+    
 app = Flask(__name__)
 # video_stream = VideoCamera()
 
-df = pd.read_csv('data/kataImbuhan_kataDasar.csv')
 imbuhan = ['ter', 'te', 'se', 'per', 'peng', 
                'pen', 'pem', 'pe', 'men', 'mem', 
                'me', 'ke', 'di', 'ber', 'be']
 list_animation = ["me","masak","apa","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
+
+factory = StemmerFactory()
+stemmer = factory.create_stemmer()
+
 
 def animation(word):
     video = [ VideoFileClip(fr'video\{i}.mp4') for i in word]
@@ -39,30 +44,31 @@ def textToAnimation(word_sequence):
     return wordToAnimation
 
 def trimKataImbuhan(word):
+    li_stem = list(stemmer.stem(word).split(" "))     
     li = list(word.split(" "))
+    
     # print(li)
     word_sequence = []
-    for i in li :
-        # print(i)
-        if i in df['kata_imbuhan'].unique():
-            index = df[df['kata_imbuhan']==i].index.to_numpy()
+
+    for i in range(len(li)):
+        if li[i] == li_stem[i]:
+            word_sequence.append(li[i])
+        elif li[i] != li_stem[i]:
             for j in imbuhan:
-                if i.startswith(j):
+                if li[i].startswith(j):
                     word_sequence.append(j)
-                    word_sequence.append(df['kata_dasar'][index[0]].strip())
+                    word_sequence.append(li_stem[i])
                 break
-        else:
-            word_sequence.append(i)
     # print(word_sequence)
     return(word_sequence)
     # textToAnimation(word_sequence)
    
 @app.route('/animasi',methods= ['GET'])
 def animasi():
-    # word = request.form['word'] 
-    # trim = trimKataImbuhan(word)
-    # textanimasi = textToAnimation(trim)
-    # animation(textanimasi)    
+    word = request.form['word'] 
+    trim = trimKataImbuhan(word)
+    textanimasi = textToAnimation(trim)
+    animation(textanimasi)    
     return send_file('combined.mp4')
 
 @app.route('/')
