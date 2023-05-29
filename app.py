@@ -19,7 +19,7 @@ stemmer = factory.create_stemmer()
 
 
 def animation(word):
-    video = [ VideoFileClip(fr'video\{i}.mp4') for i in word]
+    video = [ VideoFileClip(f"video\{i.upper()}.mp4") for i in word]
     # # join and write 
     result = concatenate_videoclips(video)
     result.write_videofile('combined.mp4',20)
