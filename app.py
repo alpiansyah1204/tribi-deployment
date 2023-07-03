@@ -1,79 +1,252 @@
-from flask import Flask,request,send_file
+from flask import Flask,request,jsonify, render_template,Response    
 # from camera import VideoCamera
-
+import time,string, cv2
 from moviepy.editor import *
 # import StemmerFactory class
-from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-
+from fastDamerauLevenshtein import damerauLevenshtein
+import pandas as pd
     
-app = Flask(__name__)
+app = Flask(__name__,static_folder='static')
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 # video_stream = VideoCamera()
 
 imbuhan = ['ter', 'te', 'se', 'per', 'peng', 
                'pen', 'pem', 'pe', 'men', 'mem', 
                'me', 'ke', 'di', 'ber', 'be']
 list_animation = ["me","masak","apa","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
+df = pd.read_csv('data\kbbi.txt',header=None, names=['kata'])
+df = df.dropna()
 
-factory = StemmerFactory()
-stemmer = factory.create_stemmer()
+df_akronim = pd.read_csv('data\persamaan.csv')
 
+
+def hapus_angka(string_input):
+    string_tanpa_angka = ''.join(char for char in string_input if not char.isdigit())
+    return string_tanpa_angka
+
+def case_folding(string_input):
+    string_input = string_input.lower()
+    return string_input
+
+def hapus_tanda_baca(string_input):
+    translator = str.maketrans("", "", string.punctuation)
+    string_tanpa_tanda_baca = string_input.translate(translator)
+    return string_tanpa_tanda_baca
 
 def animation(word):
-    video = [ VideoFileClip(fr'video\{i}.mp4') for i in word]
-    # # join and write 
+    print([fr'{i}.mp4' for i in word])
+    video = [ VideoFileClip(fr'videos/{i}.mp4') for i in word]
+    # # join and write
     result = concatenate_videoclips(video)
-    result.write_videofile('combined.mp4',20)
+    result.write_videofile('video/combined.mp4',30)
 
+def longest_common_substring(str1, str2):
+    len_str1 = len(str1)
+    len_str2 = len(str2)
+    lcs_matrix = [[0] * (len_str2 + 1) for _ in range(len_str1 + 1)]
+
+    for i in range(1, len_str1 + 1):
+        for j in range(1, len_str2 + 1):
+            if str1[i-1] == str2[j-1]:
+                lcs_matrix[i][j] = lcs_matrix[i-1][j-1] + 1
+            else:
+                lcs_matrix[i][j] = max(lcs_matrix[i-1][j], lcs_matrix[i][j-1])
+
+    return lcs_matrix[len_str1][len_str2]
+
+def choose_string(input_string, string_list):
+    max_lcs = 0
+    selected_string = ''
+
+    for string in string_list:
+        lcs_length = longest_common_substring(input_string, string)
+        if lcs_length > max_lcs:
+            max_lcs = lcs_length
+            selected_string = string
+
+    return selected_string
+
+def damerau_levenshtein_distance(str1, str2):
+    return damerauLevenshtein(str1, str2,similarity=False)
+
+def spell_correction(kata, df):
+    min_distance = float('inf')
+    min_word = kata
+    
+    def calculate_distance(row):
+        nonlocal min_distance, min_word
+        distance_val = damerau_levenshtein_distance(kata, row['kata'])
+        if distance_val < min_distance:
+            min_distance = distance_val
+            min_word = row['kata']
+    
+    df.apply(calculate_distance, axis=1)
+    
+    return min_word
+
+def spell_suggest(kata, df):
+    suggestions = []
+    
+    def calculate_distance(row):
+        if damerau_levenshtein_distance(kata, row['kata']) == 1:
+            suggestions.append(row['kata'])
+    
+    df.apply(calculate_distance, axis=1)
+    
+    return suggestions
+
+
+def cek_kata(word):
+    if df['kata'].isin([word]).any():
+        return word 
+    
+    suggestions = spell_suggest(word, df)
+    if suggestions:
+        return choose_string(word,suggestions)
+    else:
+        # Spell correction
+        correction = spell_correction(word, df)
+        # print(f"{word} ejaan21 yang salah. Mungkin yang dimaksud adalah: {correction}")
+        return correction
 
 def textToAnimation(word_sequence):
     # print(word_sequence)
     wordToAnimation = []
-    for i in word_sequence:
+    for i in word_sequence: 
         if i in list_animation:
             wordToAnimation.append(i)
-            wordToAnimation.append('idle')
         elif i not in list_animation :
             for j in i :
                 if j in list_animation:
                     wordToAnimation.append(j)
-                elif j not in list_animation:
-                    error = 'data tidak ditemukan'
-                    return error
+        if i not in imbuhan:
             wordToAnimation.append('idle')
     # print(wordToAnimation)
     return wordToAnimation
 
 def trimKataImbuhan(word):
-    li_stem = list(stemmer.stem(word).split(" "))     
-    li = list(word.split(" "))
-    
-    # print(li)
+    word = hapus_angka(case_folding(hapus_tanda_baca(word)))
+    li = list(filter(None, word.split(" ")))
     word_sequence = []
-
-    for i in range(len(li)):
-        if li[i] == li_stem[i]:
-            word_sequence.append(li[i])
-        elif li[i] != li_stem[i]:
+    list_word_correction = []
+    for i in li:
+        print(i)
+        if i in df_akronim['singkatan'].values:
+            kata = df_akronim.loc[df_akronim['singkatan'] == i, 'kata'].values[0]
+            print(f"Kata untuk singkatan '{i}' adalah '{kata}'")
+            word_sequence.append(kata)
+            list_word_correction.append(kata)
+            print('kata',kata)
+        else:
+            found = False
             for j in imbuhan:
-                if li[i].startswith(j):
-                    word_sequence.append(j)
-                    word_sequence.append(li_stem[i])
-                break
-    # print(word_sequence)
-    return(word_sequence)
-    # textToAnimation(word_sequence)
-   
+                if i.startswith(j):
+                    filtered_df = df.loc[df['kata'] == i, 'kata']
+                    if len(filtered_df) > 0:
+                        recomendation = cek_kata(i)
+                        print('j in imbuhan',i)
+                        word_sequence.append(j)
+                        word_sequence.append(filtered_df.values[0][len(j):])
+                        list_word_correction.append(j)
+                        list_word_correction.append(recomendation[len(j):])
+                        found = True
+                        break
+                   
+            if not found:
+                word_sequence.append(cek_kata(i))
+                list_word_correction.append(cek_kata(i))
+                print('not found',i)
+    return word_sequence, list_word_correction, li
+
 @app.route('/animasi',methods= ['GET'])
 def animasi():
     word = request.form['word'] 
     trim = trimKataImbuhan(word)
     textanimasi = textToAnimation(trim)
     animation(textanimasi)    
-    return send_file('combined.mp4')
+    
+    return  jsonify({'video' : 'http://192.168.1.7:5000/video_testing','text' : f'{word}'})
 
 @app.route('/')
 def index():
     return 'hello world '
 
+@app.route('/testing')
+def testing():
+    return render_template('video.html')
+
+text_sequence =[]
+@app.route('/video',methods= ['POST','GET'])
+def video():
+    global text_sequence
+    if request.method == 'POST':
+        recomendation = ''
+        word = request.form['word'] 
+        trim,correction,word_input  = trimKataImbuhan(word)
+        print('correction' ,correction)
+        text_toanimate = textToAnimation(word_input )
+        animation(text_toanimate)   
+        url =  "http://192.168.1.7:5000/video_feed"
+        print(url)
+        issame = True
+        # Bandingkan list
+        recomendation = " ".join(correction)
+        return jsonify({'url': url, 'text': text_toanimate,'recomendation':recomendation})
+    elif request.method == 'GET':
+        url =  "http://192.168.1.7:50005000/video_feed"
+        print(url)
+        return render_template('video.html', url=url,text = text_sequence)
+    
+
+@app.route('/text_stream')
+def text_stream():
+    return Response(generate_text(), mimetype='text/event-stream')
+
+def generate_text():
+    global textanimasi
+    while True:
+        # Yield the current state of the textanimasi list as a server-sent event
+        yield f"data: {', '.join(textanimasi)}\n\n"
+
+last_frame = None
+current_frame = 0
+video_status = "stop"
+def generate_frames(video_path):
+    global current_frame , last_frame, video_status
+    video = cv2.VideoCapture(video_path)
+    fps = video.get(cv2.CAP_PROP_FPS)
+    
+    while True:
+        success, frame = video.read()
+        if not success:
+            break
+        else:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            last_frame = buffer.tobytes()
+            time.sleep(0.55/fps)
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
+
+@app.route('/video_feed')
+def video_feed():
+    def generate():
+        with open("video/combined.mp4", "rb") as fw:
+            data = fw.read(1024)
+            while data:
+                yield data
+                data = fw.read(1024)
+
+    return Response(generate(), mimetype="video/mp4")
+@app.route('/video_list/<filename>')
+def video_feed_idle(filename):
+    def generate():
+        with open(f"videos/{filename}.mp4", "rb") as fw:  # use f-string for filename
+            data = fw.read(1024)
+            while data:
+                yield data
+                data = fw.read(1024)
+
+    return Response(generate(), mimetype="video/mp4")
+
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0',port=5000) 

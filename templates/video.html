@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tribi Text To Animation</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <style>
+        .videoPlayer {
+            height: 400px !important;
+            /* Adjust this value as needed */
+        }
+    </style>
+</head>
+
+<body class="align-items-center px-3 align-self-stretch">
+    <div class="container">
+        <div class="row d-flex justify-content-center mt-4">
+            <p class="fw-bold fs-4 col-md-6">Animation <i type="button" class="bi bi-info-circle" data-bs-toggle="modal"
+                    data-bs-target="#exampleModal"></i></p>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-4" id="exampleModalLabel">Animation</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Menggabungkan teknologi teks ke animasi dengan bahasa isyarat, memungkinkan komunikasi inklusif
+                        dengan lebih mudah dan menarik
+                    </div>
+                    <div class="modal-footer d-flex text d-flex justify-content-center">
+                        <button type="button"
+                            class="btn btn-light btn-outline-secondary focus-ring focus-ring-secondary"
+                            data-bs-dismiss="modal" style="width:100%">close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row d-flex justify-content-center align-items-center px-2">
+            <img id="stream" class="col-md-6 col-xl-6 col-lg-4 col-xxl-3 justify-content-center" src="{{video_file}}">
+            <video id="videoPlayer" autoplay
+                class="videoPlayer fade col-md-6 col-xl-6 col-lg-4 col-xxl-3 justify-content-center embed-responsive-item"
+                controls style="width: 100%; height: auto;">
+                <source src="{{url}}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div class="row d-flex justify-content-center mt-1">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <p class="fs-5 mt-3 me-2" id="inputText">Translate SIBI: </p>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="container clearfix">
+            <div id="inputText2" class="d-flex flex-row p-0 col-md-12 "></ul>
+        </div> -->
+        <form id="formButton3" action="/video" method="post">
+            <div id="inputText2" class="d-flex flex-wrap p-0 mb-5">
+            </div>
+
+            <!-- <button id="inputText3" class="d-flex flex-wrap p-0 mb-5">
+            </button> -->
+
+
+
+        </form>
+
+
+        <!-- Add this inside your <body> tag -->
+        <!-- Modal for showing videos -->
+        <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-4" id="videoModalLabel">Video</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <video id="modalVideoPlayer" controls style="width: 100%; height: auto;"
+                            class="videoPlayer col-md-6 col-xl-6 col-lg-4 col-xxl-3 justify-content-center embed-responsive-item"
+                            controls style="width: 100%; height: auto;">>
+                            <source type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="modal-footer d-flex text d-flex justify-content-center">
+                        <button type="button"
+                            class="btn btn-light btn-outline-secondary focus-ring focus-ring-secondary"
+                            data-bs-dismiss="modal" style="width:100%">close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-2">
+            <br>
+        </div>
+        <footer
+            class="fixed-bottom d-flex flex-wrap p-2 px-4 border-top justify-content-center align-items-center bg-light">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div id="textmungkin" class="column">
+                    <div class="input-group d-flex align-items-center">
+                        <p class="text-center m-0">Mungkin maksud Anda adalah : </p>
+                        <div class="ms-1">
+                            <button id="inputText3" class="btn text-dark bg-dark"
+                                style="border: 0; --bs-bg-opacity: .1;"></button>
+                            <button class="btn bg-dark" id="close" style="--bs-bg-opacity: .1; border: 0;"><i
+                                    class="bi bi-x"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <form action="/video" method="post" id="formButton2">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Masukan Teks" name="word"
+                            aria-label="input" aria-describedby="button-addon2">
+                        <button class="btn" type="submit" id="button-addon2" style="background-color: #8EA7E9;"><i
+                                class="bi bi-search text-light"></i></button>
+                    </div>
+                </form>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous">
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            $('#textmungkin').hide()
+            // Common function for updating data
+            function updateData(inputValue) {
+                $.ajax({
+                    url: '/video',
+                    method: 'POST',
+                    data: {
+                        word: inputValue
+                    },
+                    success: function (response) {
+                        $('#videoPlayer source').attr('src', response.url);
+                        $('#videoPlayer')[0].load();
+                        $('#videoPlayer').addClass('animate__animated animate__fadeInDown show');
+
+                        var i = 0;
+                        var inputText2 = document.getElementById('inputText2');
+                        inputText2.innerHTML = '';
+                        var interval = setInterval(function () {
+                            if (i < response.text.length) {
+                                if (response.text[i] != "idle") {
+                                    $('#inputText2').append(
+                                        '<div id="button-addon3" class="btn text-light m-1" style="background-color: #8EA7E9;">' +
+                                        response.text[i] + '</div>');
+                                }
+                                i++;
+                            } else {
+                                clearInterval(interval);
+                            }
+                        }, 0);
+                        if (response.recomendation != inputValue) {
+                            console.log(response.recomendation);
+                            console.log(inputValue);
+                            $('#textmungkin').show()
+                            $('#inputText3').text(response.recomendation).show()
+                        }
+
+                        $('input[name="word"]').val('');
+                    },
+                    complete: function () {
+                        $('#button-addon2').prop('disabled', false);
+                    }
+                });
+            }
+
+            $('#formButton2').on('submit', function (e) {
+                $('#inputText3').text('').show()
+                e.preventDefault();
+                $('#button-addon2').prop('disabled', true);
+                var inputValue = $('input[name="word"]').val();
+                $('#inputText').text("Translate SIBI: " + inputValue);
+                updateData(inputValue);
+
+            });
+
+            $('#inputText3').on('click', function (e) {
+                e.preventDefault();
+                var buttonText = $(this).text();
+                $('#inputText').text("Translate SIBI: " + buttonText);
+                updateData(buttonText);
+                // $('#inputText3').hide()
+                $('#textmungkin').hide()
+            });
+            $('#close').on('click', function () {
+                $('#textmungkin').hide();
+            });
+
+            $(document).on('click', '#button-addon3', function () {
+                var buttonText = $(this).text();
+                var videoSource = "http://192.168.1.7:5000/video_list/" + buttonText;
+                $('#modalVideoPlayer source').attr('src', videoSource);
+                $('#modalVideoPlayer')[0].load();
+                $('#videoModal').modal('show');
+            });
+        });
+    </script>
+
+
+</body>
+
+</html>
