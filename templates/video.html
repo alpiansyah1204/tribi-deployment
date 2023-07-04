@@ -19,8 +19,8 @@
 </head>
 
 <body class="align-items-center px-3 align-self-stretch">
-    <div class="container">
-        <div class="row d-flex justify-content-center mt-4">
+    <div class="container col-sm-10 col-xl-8">
+        <div class=" mt-4">
             <p class="fw-bold fs-4 col-md-6">Animation <i type="button" class="bi bi-info-circle" data-bs-toggle="modal"
                     data-bs-target="#exampleModal"></i></p>
         </div>
@@ -56,30 +56,19 @@
             </video>
         </div>
 
-        <div class="row d-flex justify-content-center mt-1">
+        <div class="row d-flex mt-1">
             <div class="col-md-6">
                 <div class="d-flex align-items-center">
                     <p class="fs-5 mt-3 me-2" id="inputText">Translate SIBI: </p>
                 </div>
             </div>
         </div>
-        <!-- <div class="container clearfix">
-            <div id="inputText2" class="d-flex flex-row p-0 col-md-12 "></ul>
-        </div> -->
+
         <form id="formButton3" action="/video" method="post">
             <div id="inputText2" class="d-flex flex-wrap p-0 mb-5">
             </div>
-
-            <!-- <button id="inputText3" class="d-flex flex-wrap p-0 mb-5">
-            </button> -->
-
-
-
         </form>
 
-
-        <!-- Add this inside your <body> tag -->
-        <!-- Modal for showing videos -->
         <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
@@ -108,15 +97,15 @@
             <br>
         </div>
         <footer
-            class="fixed-bottom d-flex flex-wrap p-2 px-4 border-top justify-content-center align-items-center bg-light">
-            <div class="col-12 col-sm-6 col-xl-3">
-                <div id="textmungkin" class="column">
+            class="fixed-bottom d-flex flex-wrap p-2 px-4 border-top justify-content-center align-items-center bg-light "style="border: 0; --bs-bg-opacity: .5;">
+            <div class="col-12 col-sm-10 col-xxl-8">
+                <div id="textmungkin" class="column bg-opacity-25"  >
                     <div class="input-group d-flex align-items-center">
                         <p class="text-center m-0">Mungkin maksud Anda adalah : </p>
                         <div class="ms-1">
-                            <button id="inputText3" class="btn text-dark bg-dark"
-                                style="border: 0; --bs-bg-opacity: .1;"></button>
-                            <button class="btn bg-dark" id="close" style="--bs-bg-opacity: .1; border: 0;"><i
+                            <button id="inputText3" class="btn text-dark bg-light-subtle"
+                               ></button>
+                            <button class="btn bg-light-subtle" id="close" ><i
                                     class="bi bi-x"></i></button>
                         </div>
                     </div>
@@ -168,11 +157,15 @@
                                 clearInterval(interval);
                             }
                         }, 0);
-                        if (response.recomendation != inputValue) {
+                        console.log(response.recomendation.length);
+                        if (response.recomendation != 0) {
                             console.log(response.recomendation);
                             console.log(inputValue);
                             $('#textmungkin').show()
                             $('#inputText3').text(response.recomendation).show()
+                        }
+                        else{
+                            $('#textmungkin').hide()
                         }
 
                         $('input[name="word"]').val('');
@@ -184,6 +177,7 @@
             }
 
             $('#formButton2').on('submit', function (e) {
+                $('#textmungkin').hide()
                 $('#inputText3').text('').show()
                 e.preventDefault();
                 $('#button-addon2').prop('disabled', true);
@@ -207,7 +201,7 @@
 
             $(document).on('click', '#button-addon3', function () {
                 var buttonText = $(this).text();
-                var videoSource = "http://192.168.1.7:5000/video_list/" + buttonText;
+                var videoSource = "http://127.0.0.1:5000/video_list/" + buttonText;
                 $('#modalVideoPlayer source').attr('src', videoSource);
                 $('#modalVideoPlayer')[0].load();
                 $('#videoModal').modal('show');

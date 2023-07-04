@@ -14,10 +14,10 @@ imbuhan = ['ter', 'te', 'se', 'per', 'peng',
                'pen', 'pem', 'pe', 'men', 'mem', 
                'me', 'ke', 'di', 'ber', 'be']
 list_animation = ["me","masak","apa","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
-df = pd.read_csv('data\kbbi.txt',header=None, names=['kata'])
+df = pd.read_csv('data/kbbi.txt',header=None, names=['kata'])
 df = df.dropna()
 
-df_akronim = pd.read_csv('data\persamaan.csv')
+df_akronim = pd.read_csv('data/persamaan.csv')
 
 
 def hapus_angka(string_input):
@@ -165,7 +165,7 @@ def animasi():
     textanimasi = textToAnimation(trim)
     animation(textanimasi)    
     
-    return  jsonify({'video' : 'http://192.168.1.7:5000/video_testing','text' : f'{word}'})
+    return  jsonify({'video' : 'http://127.0.0.1/video_testing','text' : f'{word}'})
 
 @app.route('/')
 def index():
@@ -186,14 +186,18 @@ def video():
         print('correction' ,correction)
         text_toanimate = textToAnimation(word_input )
         animation(text_toanimate)   
-        url =  "http://192.168.1.7:5000/video_feed"
+        url =  "http://127.0.0.1:5000/video_feed"
         print(url)
-        issame = True
+        recomendation = ""
+        print('word_input',word_input)
+        print('correction',correction)
+        if word_input != correction:
         # Bandingkan list
-        recomendation = " ".join(correction)
+            recomendation = " ".join(correction)
+        print('recomendation',recomendation)
         return jsonify({'url': url, 'text': text_toanimate,'recomendation':recomendation})
     elif request.method == 'GET':
-        url =  "http://192.168.1.7:50005000/video_feed"
+        url =  "http://127.0.0.1:5000/video_feed"
         print(url)
         return render_template('video.html', url=url,text = text_sequence)
     
