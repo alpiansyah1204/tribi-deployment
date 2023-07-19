@@ -10,15 +10,14 @@ app = Flask(__name__,static_folder='static')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 # video_stream = VideoCamera()
 
-imbuhan = ['ter', 'te', 'se', 'per', 'peng', 
-               'pen', 'pem', 'pe', 'men', 'mem', 
-               'me', 'ke', 'di', 'ber', 'be']
-list_animation = ["me","masak","apa","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
+imbuhan = ['ber', 'ter', 'se', 'ke', 'di', 'pe', 'me','wati','nya', 'wan', 'man','kan', 'ti', 'an','pun', 'lah', 'kah']
+list_animation = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 df = pd.read_csv('data/kbbi.txt',header=None, names=['kata'])
 df = df.dropna()
-
+imbuhan_awal = ['ber', 'ter', 'se', 'ke', 'di', 'pe', 'me']
+imbuhan_akhir = ['wati','nya', 'wan', 'man','kan', 'ti', 'an']
+imbuhan_partikel =  ['pun', 'lah', 'kah']
 df_akronim = pd.read_csv('data/persamaan.csv')
-
 
 def hapus_angka(string_input):
     string_tanpa_angka = ''.join(char for char in string_input if not char.isdigit())
@@ -35,7 +34,17 @@ def hapus_tanda_baca(string_input):
 
 def animation(word):
     print([fr'{i}.mp4' for i in word])
-    video = [ VideoFileClip(fr'videos/{i}.mp4') for i in word]
+    video =[]
+    for i in word:
+        if i in list_animation:
+            video.append(VideoFileClip(fr'videos/abjad/{i}.mp4'))
+        elif i in imbuhan_awal:
+            video.append(VideoFileClip(fr'videos/imbuhan/awalan/{i}.mp4'))
+        elif i in imbuhan_akhir:
+            video.append(VideoFileClip(fr'videos/imbuhan/akhiran/{i}.mp4'))
+        elif i in imbuhan_partikel:
+            video.append(VideoFileClip(fr'videos/imbuhan/partikel/{i}.mp4'))
+    # video = [ VideoFileClip(fr'videos/abjad/{i}.mp4') for i in word]
     # # join and write
     result = concatenate_videoclips(video)
     result.write_videofile('video/combined.mp4',30)
@@ -108,21 +117,76 @@ def cek_kata(word):
         correction = spell_correction(word, df)
         # print(f"{word} ejaan21 yang salah. Mungkin yang dimaksud adalah: {correction}")
         return correction
+def cek_string_mengawali(daftar, string):
+    for elemen in daftar:
+        if string.startswith(elemen):
+            return elemen
+    return None
 
-def textToAnimation(word_sequence):
-    # print(word_sequence)
-    wordToAnimation = []
-    for i in word_sequence: 
-        if i in list_animation:
-            wordToAnimation.append(i)
-        elif i not in list_animation :
-            for j in i :
-                if j in list_animation:
-                    wordToAnimation.append(j)
-        if i not in imbuhan:
-            wordToAnimation.append('idle')
-    # print(wordToAnimation)
-    return wordToAnimation
+def textToAnimation(kata):
+    imbuhan_akhir_n_avail = True
+    imbuhan_awal_n_avail = True
+    imbuhan_partikel_n_avail = True
+    hasil = []
+    if kata in list_animation:
+        hasil.append(kata)
+    else :
+        for i in imbuhan_awal:
+            if kata.startswith(i):
+                imbuhan_awal_n_avail = False
+                hasil.append(i)
+                kata = kata[len(i):]
+                break
+        
+        for i in imbuhan_akhir:
+            if kata.endswith(i):
+                kata = kata[:-len(i)]
+                imbuhan_akhir_n_avail = False
+                if kata in list_animation:
+                    hasil.append(kata)
+                else :
+                    for j in kata:
+                        hasil.append(j)
+                hasil.append(i)
+                break
+        if(imbuhan_akhir_n_avail):
+            for i in imbuhan_partikel:
+                if kata.endswith(i):
+                    imbuhan_partikel_n_avail = False
+                    kata = kata[:-len(i)]
+                    if kata in list_animation:
+                        hasil.append(kata)
+                    else :
+                        for j in kata:
+                            hasil.append(j)
+                    hasil.append(i)
+                    break
+     
+     
+        if(imbuhan_akhir_n_avail and imbuhan_partikel_n_avail and imbuhan_awal_n_avail):
+            if kata in list_animation:
+                        hasil.append(kata)
+            else :
+                for j in kata:
+                    hasil.append(j)
+        elif(imbuhan_akhir_n_avail and imbuhan_partikel_n_avail ):
+            if kata in list_animation:
+                hasil.append(kata)
+            else :
+                for j in kata:
+                    hasil.append(j)
+    hasil.append('idle')
+    return hasil
+
+def flatten_list(nested_list):
+    flattened = []
+    for item in nested_list:
+        if isinstance(item, list):
+            flattened.extend(flatten_list(item))
+        else:
+            flattened.append(item)
+    return flattened
+
 
 def trimKataImbuhan(word):
     word = hapus_angka(case_folding(hapus_tanda_baca(word)))
@@ -147,8 +211,9 @@ def trimKataImbuhan(word):
                         print('j in imbuhan',i)
                         word_sequence.append(j)
                         word_sequence.append(filtered_df.values[0][len(j):])
-                        list_word_correction.append(j)
-                        list_word_correction.append(recomendation[len(j):])
+                        # list_word_correction.append(j)
+                        # list_word_correction.append(recomendation[len(j):])
+                        list_word_correction.append(filtered_df.values[0])
                         found = True
                         break
                    
@@ -165,7 +230,7 @@ def animasi():
     textanimasi = textToAnimation(trim)
     animation(textanimasi)    
     
-    return  jsonify({'video' : 'http://127.0.0.1/video_testing','text' : f'{word}'})
+    return  jsonify({'video' : '/video_testing','text' : f'{word}'})
 
 @app.route('/')
 def index():
@@ -182,11 +247,15 @@ def video():
     if request.method == 'POST':
         recomendation = ''
         word = request.form['word'] 
+        word = word.lower()
         trim,correction,word_input  = trimKataImbuhan(word)
         print('correction' ,correction)
-        text_toanimate = textToAnimation(word_input )
-        animation(text_toanimate)   
-        url =  "http://127.0.0.1:5000/video_feed"
+        # text_toanimate = textToAnimation(word_input)
+        textToAnimate = [textToAnimation(i) for i in word_input]
+        flattenedToAnimation = [item for sublist in textToAnimate for item in (flatten_list(sublist) if isinstance(sublist, list) else [sublist])]
+
+        animation(flattenedToAnimation)   
+        url =  "/video_feed"
         print(url)
         recomendation = ""
         print('word_input',word_input)
@@ -195,9 +264,9 @@ def video():
         # Bandingkan list
             recomendation = " ".join(correction)
         print('recomendation',recomendation)
-        return jsonify({'url': url, 'text': text_toanimate,'recomendation':recomendation})
+        return jsonify({'url': url, 'text': flattenedToAnimation,'recomendation':recomendation})
     elif request.method == 'GET':
-        url =  "http://127.0.0.1:5000/video_feed"
+        url =  "/video_feed_idle"
         print(url)
         return render_template('video.html', url=url,text = text_sequence)
     
@@ -239,18 +308,51 @@ def video_feed():
             while data:
                 yield data
                 data = fw.read(1024)
-
     return Response(generate(), mimetype="video/mp4")
-@app.route('/video_list/<filename>')
-def video_feed_idle(filename):
+
+@app.route('/video_feed_idle')
+def video_feed_idle():
     def generate():
-        with open(f"videos/{filename}.mp4", "rb") as fw:  # use f-string for filename
+        with open("videos/abjad/idle.mp4", "rb") as fw:
+            data = fw.read(1024)
+            while data:
+                yield data
+                data = fw.read(1024)
+    return Response(generate(), mimetype="video/mp4")
+
+
+@app.route('/video_list/<filename>')
+def video_feed_list(filename):
+    def generate():
+        directory =""
+        if filename.lower() in list_animation:
+            directory = 'abjad'
+        elif filename.lower() in imbuhan_awal:
+            directory = 'imbuhan/awalan'
+        elif filename.lower() in imbuhan_akhir:
+            directory = 'imbuhan/akhiran'
+        elif filename.lower() in imbuhan_partikel:
+            directory = 'imbuhan/partikel'
+        with open(f"videos/{directory}/{filename}.mp4", "rb") as fw: 
             data = fw.read(1024)
             while data:
                 yield data
                 data = fw.read(1024)
 
     return Response(generate(), mimetype="video/mp4")
+
+
+@app.route('/abjad')
+def abjad_page():
+    return render_template('abjad.html')
+@app.route('/imbuhan')
+def imbuhan_page():
+    return render_template('imbuhan.html')
+
+@app.route('/list_video_app/<letter>')
+def list_video_app(letter):
+    return render_template('video_list.html',letter=letter)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5000) 
